@@ -24,7 +24,7 @@ def CustomChatGPT(user_input, messages=None):
     return ChatGPT_reply
 
 # Use gradio instead of gr
-demo = gr.Interface(fn=CustomChatGPT, inputs="text", outputs="text", title="Real Estate Pro")
+demo = gr.Interface(fn=CustomChatGPT, inputs="text", outputs="text", title="Custom ChatGPT")
 
 # Get the port from the environment variable, or default to 7861
 port = int(os.getenv("PORT", 7861))

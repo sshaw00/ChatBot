@@ -30,4 +30,4 @@ demo = gr.Interface(fn=CustomChatGPT, inputs="text", outputs="text", title="Real
 port = int(os.getenv("PORT", 7861))
 
 # Specify the host and port for the Gradio app
-demo.launch(share=True, server_port=port)
+demo.launch(share=True,server_name="0.0.0.0", server_port=port)

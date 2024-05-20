@@ -1,33 +1,39 @@
+from flask import Flask, render_template, request, session
+from flask_session import Session
 import openai
-import gradio as gr
 import os
 from dotenv import load_dotenv
 
-# Load environment variables from the .env file
 load_dotenv()
-print(gr.__version__)
+
+app = Flask(__name__)
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+app.config["SESSION_TYPE"] = "filesystem"
+Session(app)
 
 openai.api_key = os.getenv("API")
 
-# Initialize messages within the function to avoid retaining state between calls
-def CustomChatGPT(user_input, messages=None):
-    if messages is None:
-        messages = [{"role": "system", "content": "Creative teacher specialising in Design Thinking on Project Based Learning"}]
+@app.route("/", methods=["GET", "POST"])
+def home():
+    # Reset the session messages on page load
+    if request.method == "GET":
+        session.pop("messages", None)
     
-    messages.append({"role": "user", "content": user_input})
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=messages
-    )
-    ChatGPT_reply = response["choices"][0]["message"]["content"]
-    messages.append({"role": "assistant", "content": ChatGPT_reply})
-    return ChatGPT_reply
+    if "messages" not in session:
+        session["messages"] = [{"role": "system", "content": "Creative teacher specialising in Design Thinking on Project Based Learning"}]
 
-# Use gradio instead of gr
-demo = gr.Interface(fn=CustomChatGPT, inputs="text", outputs="text", title="Custom ChatGPT")
+    if request.method == "POST":
+        user_input = request.form["message"]
+        session["messages"].append({"role": "user", "content": user_input})
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=session["messages"]
+        )
+        reply = response["choices"][0]["message"]["content"]
+        session["messages"].append({"role": "assistant", "content": reply})
+        session.modified = True  # Ensure the session is saved
 
-# Get the port from the environment variable, or default to 7861
-port = int(os.getenv("PORT", 7861))
+    return render_template("index.html", messages=session["messages"])
 
-# Specify the host and port for the Gradio app
-demo.launch(share=True,server_name="0.0.0.0", server_port=port)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
